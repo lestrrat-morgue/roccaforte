@@ -27,3 +27,20 @@ the clients to query back to RoccaForte what exactly the events were.
 
 Destination is anywhere we can deliver our notifications to. The most basic
 type of the destination is an HTTP endpoint, but could be anything, really.
+
+## Client
+
+```go
+import(
+  "github.com/lestrrat/roccaforte/event"
+  "github.com/lestrrat/roccaforte/client/http"
+)
+
+func main() {
+  cl := http.New("http://roccaforte:8080/enqueue")
+  ev := event.New()
+  if err := cl.Enqueue(ev); err != nil {
+    ...
+  }
+}
+```
