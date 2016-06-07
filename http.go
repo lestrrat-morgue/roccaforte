@@ -24,6 +24,10 @@ func NewHTTPSource() *HTTPSource {
 	return s
 }
 
+func (s *HTTPSource) SetStorage(es EventStorage) {
+	s.storage = es
+}
+
 func (s *HTTPSource) Loop(ctx context.Context) {
 	src := &graceful.Server{
 		Server: &http.Server{
@@ -62,6 +66,8 @@ func httpError(w http.ResponseWriter, code int, msg string) {
 }
 
 func (s *HTTPSource) httpEnqueue(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
 	if strings.ToLower(r.Method) != "post" {
 		w.Header().Set("Allow", "POST")
 		httpError(w, http.StatusMethodNotAllowed, "")
@@ -73,7 +79,7 @@ func (s *HTTPSource) httpEnqueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	events, err := s.toEvent(r)
+	events, err := s.toEvent(ctx, r)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -87,10 +93,18 @@ func (s *HTTPSource) httpEnqueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (s *HTTPSource) toEvent(r *http.Request) ([]ReceivedEvent, error) {
+func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]ReceivedEvent, error) {
+	now := time.Now()
 	events := []ReceivedEvent{}
 	if err := json.NewDecoder(r.Body).Decode(&events); err != nil {
 		return nil, errors.Wrap(err, "failed to decode JSON")
 	}
+
+	// Save data (XXX This is too naive)
+	for _, e := range events {
+		e.SetReceivedOn(now)
+		s.storage.Save(ctx, e)
+	}
+
 	return events, nil
 }

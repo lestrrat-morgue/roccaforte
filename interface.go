@@ -2,7 +2,10 @@ package roccaforte
 
 import (
 	"net/http"
+	"sync"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/lestrrat/roccaforte/event"
 
@@ -15,9 +18,15 @@ type Destination interface {
 
 type Engine struct {
 	Sources []EventSource
+	Storage EventStorage
+}
+
+type EventStorage interface {
+	Save(context.Context, ...event.Event) error
 }
 
 type EventSource interface {
+	SetStorage(EventStorage)
 	Events() <-chan event.Event
 }
 
@@ -34,15 +43,17 @@ type ReceivedEvent struct {
 }
 
 type GPubSubSource struct {
-	client *pubsub.Client
-	outCh  chan event.Event
-	Topic  string // PubSub topic name
+	client  *pubsub.Client
+	outCh   chan event.Event
+	storage EventStorage
+	Topic   string // PubSub topic name
 }
 
 type HTTPSource struct {
 	http.Handler
-	outCh  chan event.Event
-	Listen string
+	outCh   chan event.Event
+	storage EventStorage
+	Listen  string
 }
 
 /*
@@ -56,3 +67,12 @@ type BundledEvent struct {
 type Destination interface {
 	Deliver(Notification)
 }*/
+
+type MemoryStorage struct {
+	mutex sync.Mutex
+	store map[int64]map[string][]event.Event
+}
+
+type GDatastoreStorage struct {
+	ProjectID string
+}

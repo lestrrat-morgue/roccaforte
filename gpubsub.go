@@ -18,6 +18,10 @@ func NewGPubSubSource(cl *pubsub.Client) *GPubSubSource {
 	}
 }
 
+func (s *GPubSubSource) SetStorage(es EventStorage) {
+	s.storage = es
+}
+
 func (s *GPubSubSource) Events() <-chan event.Event {
 	return s.outCh
 }

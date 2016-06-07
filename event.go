@@ -22,9 +22,17 @@ func (e *ReceivedEvent) Source() EventSource {
 }
 
 func (e *ReceivedEvent) SetReceivedOn(t time.Time) {
-	e.deliveredOn = t
+	e.receivedOn = t
 }
 
 func (e *ReceivedEvent) SetDeliveredOn(t time.Time) {
 	e.deliveredOn = t
+}
+
+func (e ReceivedEvent) ReceivedOn() time.Time {
+	return e.receivedOn
+}
+
+func (e ReceivedEvent) DeliveredOn() time.Time {
+	return e.deliveredOn
 }

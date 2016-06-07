@@ -10,8 +10,14 @@ import (
 
 var eventType = reflect.TypeOf((*event.Event)(nil)).Elem()
 
-func (e *Engine) Run() error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (e *Engine) AddSource(s EventSource) {
+	s.SetStorage(e.Storage)
+	e.Sources = append(e.Sources, s)
+}
+
+func (e *Engine) Run(ctx context.Context) error {
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
 
 	cases := make([]reflect.SelectCase, len(e.Sources)+1)
@@ -52,7 +58,5 @@ func (e *Engine) Run() error {
 }
 
 func (e *Engine) handleEvent(ev event.Event) error {
-	//
-
 	return nil
 }
