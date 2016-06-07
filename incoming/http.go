@@ -1,4 +1,4 @@
-package roccaforte
+package incoming
 
 import (
 	"encoding/json"
@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lestrrat/roccaforte/event"
 	"github.com/pkg/errors"
 	"github.com/tylerb/graceful"
 	"golang.org/x/net/context"
@@ -15,7 +14,7 @@ import (
 func NewHTTPSource() *HTTPSource {
 	mux := http.NewServeMux()
 	s := &HTTPSource{
-		outCh:   make(chan event.Event),
+		outCh:   make(chan []ReceivedEvent),
 		Listen:  ":8080",
 		Handler: mux,
 	}
@@ -54,7 +53,7 @@ func (s *HTTPSource) Loop(ctx context.Context) {
 	<-exited
 }
 
-func (s *HTTPSource) Events() <-chan event.Event {
+func (s *HTTPSource) Events() <-chan []ReceivedEvent {
 	return s.outCh
 }
 
@@ -85,10 +84,7 @@ func (s *HTTPSource) httpEnqueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, e := range events {
-		// Blocking here... is it a good idea?
-		s.outCh <- e
-	}
+	s.outCh <- events
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -108,3 +104,5 @@ func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]ReceivedEv
 
 	return events, nil
 }
+
+

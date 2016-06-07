@@ -1,12 +1,12 @@
-package roccaforte_test
+package incoming_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/lestrrat/roccaforte"
 	"github.com/lestrrat/roccaforte/client"
 	"github.com/lestrrat/roccaforte/event"
+	"github.com/lestrrat/roccaforte/incoming"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -15,8 +15,8 @@ func TestHTTPSource(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// currently fails if port :8080 is not open
-	s := roccaforte.NewHTTPSource()
-	m := roccaforte.NewMemoryStorage()
+	s := incoming.NewHTTPSource()
+	m := incoming.NewMemoryStorage()
 	s.SetStorage(m)
 	go s.Loop(ctx)
 	time.AfterFunc(5*time.Second, func() {
@@ -55,14 +55,16 @@ func TestHTTPSource(t *testing.T) {
 		select {
 		case <-ctx.Done():
 			loop = false
-		case event := <-s.Events():
-			t.Logf("new event: %s", event.ID())
-			_, ok := seen[event.ID()]
-			if !assert.False(t, ok, "Event must be new") {
-				return
+		case events := <-s.Events():
+			for _, event := range events {
+				_, ok := seen[event.ID()]
+				if !assert.False(t, ok, "Event must be new") {
+					return
+				}
+				seen[event.ID()] = struct{}{}
+				count++
 			}
-			seen[event.ID()] = struct{}{}
-			count++
+
 			if count >= msgcount {
 				loop = false
 			}
@@ -75,7 +77,7 @@ func TestHTTPSource(t *testing.T) {
 
 	// All events should be in the same time frame
 	var timeframe int64 = 0
-	m.Walk(func(p int64, s  string, events []event.Event) {
+	m.Walk(func(p int64, s string, events []event.Event) {
 		switch timeframe {
 		case 0:
 			timeframe = p

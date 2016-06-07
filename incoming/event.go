@@ -1,4 +1,4 @@
-package roccaforte
+package incoming
 
 import (
 	"time"
@@ -15,6 +15,10 @@ func NewEvent(s EventSource, name string) event.Event {
 	e.CoreAttrs.SetName(name)
 	e.CoreAttrs.SetID(tools.UUID())
 	return e
+}
+
+func (e ReceivedEvent) ID() string {
+	return e.CoreAttrs.ID()
 }
 
 func (e *ReceivedEvent) Source() EventSource {

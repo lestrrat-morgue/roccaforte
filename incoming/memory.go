@@ -1,4 +1,4 @@
-package roccaforte
+package incoming
 
 import (
 	"github.com/lestrrat/roccaforte/event"
@@ -36,4 +36,8 @@ func (ms *MemoryStorage) Walk(f func(int64, string, []event.Event)) {
 			f(t, name, events)
 		}
 	}
+}
+
+func (ms *MemoryStorage) AddEventDelivery(t int64, events []ReceivedEvent) error {
+	return nil
 }
