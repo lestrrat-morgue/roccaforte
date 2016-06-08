@@ -34,8 +34,19 @@ func (s *GDatastoreStorage) Save(ctx context.Context, events ...*ReceivedEvent) 
 
 		parent := datastore.NewKey(ctx, "ReceivedEvents", strconv.FormatInt(id, 10), 0, nil)
 		key := datastore.NewIncompleteKey(ctx, e.Name(), parent)
-		_, err := cl.Put(ctx, key, e)
+		err := cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
+			var g int64
+			if err := tx.Get(key, &g); err == nil {
+				return nil
+			}
+			return tx.Put(key, id)
+		}, nil)
+
 		if err != nil {
+			return errors.Wrap(err, "failed to store event id")
+		}
+
+		if _, err = cl.Put(ctx, key, e); err != nil {
 			return errors.Wrap(err, "failed to Put event to datastore")
 		}
 	}
