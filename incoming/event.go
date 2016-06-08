@@ -4,10 +4,9 @@ import (
 	"time"
 
 	"github.com/builderscon/octav/octav/tools"
-	"github.com/lestrrat/roccaforte/event"
 )
 
-func NewEvent(s EventSource, name string) event.Event {
+func NewEvent(s EventSource, name string) *ReceivedEvent {
 	e := &ReceivedEvent{
 		source:    s,
 		createdOn: time.Now(),

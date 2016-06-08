@@ -1,7 +1,10 @@
 package incoming
 
 import (
+	"os"
+	"os/signal"
 	"reflect"
+	"syscall"
 
 	"github.com/lestrrat/roccaforte/event"
 	"github.com/lestrrat/roccaforte/internal/tools"
@@ -24,7 +27,22 @@ func (e *Server) Run(ctx context.Context) error {
 	var cancel func()
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
+	defer println("Terminating")
 
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-sigCh:
+			println("Received signal")
+			cancel()
+			return
+		}
+	}()
+
+	println("Serving requests...")
 	cases := make([]reflect.SelectCase, len(e.Sources)+1)
 	cases[0] = reflect.SelectCase{
 		Dir:  reflect.SelectRecv,
@@ -41,6 +59,7 @@ func (e *Server) Run(ctx context.Context) error {
 		chosen, rv, ok := reflect.Select(cases)
 		switch chosen {
 		case 0:
+			loop = false
 			continue // ctx.Done
 		default:
 			if !ok {
