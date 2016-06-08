@@ -3,6 +3,8 @@ package event
 import (
 	"encoding/json"
 
+	"google.golang.org/cloud/datastore"
+
 	"github.com/builderscon/octav/octav/tools"
 	"github.com/pkg/errors"
 )
@@ -59,4 +61,29 @@ func (c *CoreAttrs) MarshalJSON() ([]byte, error) {
 	}
 
 	return buf, nil
+}
+
+func (c *CoreAttrs) Save() ([]datastore.Property, error) {
+	return []datastore.Property{
+		{
+			Name:  "ID",
+			Value: c.id,
+		},
+		{
+			Name:  "Name",
+			Value: c.name,
+		},
+	}, nil
+}
+
+func (c *CoreAttrs) Load(ps []datastore.Property) error {
+	for _, p := range ps {
+		switch p.Name {
+		case "ID":
+			c.id = p.Value.(string)
+		case "Name":
+			c.name = p.Value.(string)
+		}
+	}
+	return nil
 }
