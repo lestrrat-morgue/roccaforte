@@ -42,7 +42,7 @@ func (s *GDatastoreStorage) Save(ctx context.Context, events ...*ReceivedEvent) 
 			}
 			_, err = tx.Put(k, id)
 			return err
-		}, nil)
+		})
 
 		if err != nil {
 			return errors.Wrap(err, "failed to store event id")
