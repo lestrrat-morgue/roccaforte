@@ -56,9 +56,18 @@ func (s *GDatastoreStorage) Delete(ctx context.Context, events ...*ReceivedEvent
 		}
 
 		parent := datastore.NewKey(ctx, "ReceivedEvents", strconv.FormatInt(id, 10), 0, nil)
-		key := datastore.NewIncompleteKey(ctx, e.Name(), parent)
-		if err := cl.Delete(ctx, key); err != nil {
-			return errors.Wrap(err, "failed to Delete event from datastore")
+		q := datastore.NewQuery(e.Name()).
+			Ancestor(parent).
+			Filter("ID = ", e.ID()).
+			KeysOnly()
+		for it := cl.Run(ctx, q); ; {
+			key, err := it.Next(nil)
+			if err != nil {
+				break
+			}
+			if err := cl.Delete(ctx, key); err != nil {
+				return errors.Wrap(err, "failed to Delete event from datastore")
+			}
 		}
 	}
 	return nil

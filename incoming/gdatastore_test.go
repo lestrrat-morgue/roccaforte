@@ -3,6 +3,7 @@ package incoming_test
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/lestrrat/roccaforte/incoming"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +24,11 @@ func TestGDatastore(t *testing.T) {
 	ctx := context.Background()
 	s := incoming.NewGDatastoreStorage(projectID)
 	e := incoming.NewEvent(nil, "test.notify")
+	e.SetReceivedOn(time.Now())
 	if !assert.NoError(t, s.Save(ctx, e), "s.Save should succeed") {
 		return
 	}
-	defer s.Delete(ctx, e)
+	if !assert.NoError(t, s.Delete(ctx, e), "s.Delete should succeed") {
+		return
+	}
 }
