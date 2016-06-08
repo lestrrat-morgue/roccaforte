@@ -28,10 +28,6 @@ type EventStorage interface {
 	AddEventDelivery(int64, []ReceivedEvent) error
 }
 
-type EventGroup struct {
-	ID int64
-}
-
 type EventSource interface {
 	SetStorage(EventStorage)
 	Events() <-chan event.Event

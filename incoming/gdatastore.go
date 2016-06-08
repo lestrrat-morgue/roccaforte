@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/lestrrat/roccaforte/event"
 	"github.com/pkg/errors"
 	"google.golang.org/cloud/datastore"
 )
@@ -36,11 +37,12 @@ func (s *GDatastoreStorage) Save(ctx context.Context, events ...*ReceivedEvent) 
 		key := datastore.NewIncompleteKey(ctx, e.Name(), parent)
 		_, err := cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
 			k := datastore.NewKey(ctx, "EventGroup", strconv.FormatInt(id, 10), 0, nil)
-			var g EventGroup
+			var g event.EventGroup
 			if err := tx.Get(k, &g); err == nil {
 				return nil
 			}
 			g.ID = id
+			g.Kind = e.Name()
 			_, err = tx.Put(k, &g)
 			return err
 		})
