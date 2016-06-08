@@ -20,11 +20,11 @@ func TestGDatastore(t *testing.T) {
 		t.Skip("missing project ID. please set DATASTORE_PROJECT_ID")
 		return
 	}
-
+	ctx := context.Background()
 	s := incoming.NewGDatastoreStorage(projectID)
 	e := incoming.NewEvent(nil, "test.notify")
-	if !assert.NoError(t, s.Save(context.Background(), e), "s.Save should succeed") {
+	if !assert.NoError(t, s.Save(ctx, e), "s.Save should succeed") {
 		return
 	}
-	defer s.Delete(e)
+	defer s.Delete(ctx, e)
 }
