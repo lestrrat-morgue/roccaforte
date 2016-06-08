@@ -39,7 +39,8 @@ func (s *GDatastoreStorage) Save(ctx context.Context, events ...*ReceivedEvent) 
 			if err := tx.Get(key, &g); err == nil {
 				return nil
 			}
-			return tx.Put(key, id)
+			_, err = tx.Put(key, id)
+			return err
 		}, nil)
 
 		if err != nil {
