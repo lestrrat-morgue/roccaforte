@@ -35,7 +35,7 @@ func (s *GDatastoreStorage) Save(ctx context.Context, events ...*ReceivedEvent) 
 		parent := datastore.NewKey(ctx, "ReceivedEvents", strconv.FormatInt(id, 10), 0, nil)
 		key := datastore.NewIncompleteKey(ctx, e.Name(), parent)
 		_, err := cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
-			k := datastore.NewIncompleteKey(ctx, "EventGroup", nil)
+			k := datastore.NewKey(ctx, "EventGroup", strconv.FormatInt(id, 10), 0, nil)
 			var g int64
 			if err := tx.Get(k, &g); err == nil {
 				return nil
