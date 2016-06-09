@@ -45,8 +45,10 @@ func (s *HTTPSource) Loop(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		// Make sure to stop the server
+		println("ctx.Done")
 		src.Stop(5 * time.Second)
 	case <-exited:
+		println("server exited")
 	}
 
 	// wait for the server to exit
@@ -91,14 +93,20 @@ func (s *HTTPSource) httpEnqueue(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]*ReceivedEvent, error) {
 	now := time.Now()
-	events := []*ReceivedEvent{}
-	if err := json.NewDecoder(r.Body).Decode(&events); err != nil {
+	in := []*ReceivedEvent{}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		return nil, errors.Wrap(err, "failed to decode JSON")
 	}
 
+	// prune possible nils
+	events := make([]*ReceivedEvent{}, 0, len(in))
 	// Save data (XXX This is too naive)
 	for _, e := range events {
+		if e == nil {
+			continue
+		}
 		e.SetReceivedOn(now)
+		events = append(events, e)
 	}
 
 	return events, nil
