@@ -59,6 +59,7 @@ func TestOutgoing(t *testing.T) {
 	}
 
 	o := outgoing.New(projectID)
+	o.Clock = clock.NewMockClock(time.Now().Add(time.Hour))
 	go o.Run(ctx)
 
 	time.AfterFunc(10*time.Second, func() {

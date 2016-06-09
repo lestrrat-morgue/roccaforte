@@ -8,12 +8,14 @@ import (
 
 	"github.com/lestrrat/roccaforte/event"
 	"github.com/pkg/errors"
+	"github.com/WatchBeam/clock"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/datastore"
 )
 
 func New(id string) *Server {
 	return &Server{
+		Clock: clock.C,
 		ProjectID: id,
 	}
 }
@@ -52,7 +54,7 @@ func (s *Server) Run(ctx context.Context) error {
 	case <-tick.C:
 		var g event.EventGroup
 		q := datastore.NewQuery("EventGroup").
-			Filter("ID <=", time.Now().Unix()).
+			Filter("ID <=", s.Clock.Now().Unix()).
 			Order("ID")
 
 		for it := cl.Run(ctx, q); ; {
