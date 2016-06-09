@@ -4,17 +4,29 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ignorableErr struct {
+	error
+}
+
+func (e ignorableErr) Ignorable() bool {
+	return true
+}
+
+func wrapIgnorable(err error) error {
+	return ignorableErr{error: err}
+}
+
 func (m *RuleMap) Get(name string) (*Rule, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.rules == nil {
-		return nil, errors.New("rule not found: '" + name "'")
+		return nil, wrapIgnorable(errors.New("rule not found: '" + name + "'"))
 	}
 
 	r, ok := m.rules[name]
 	if !ok {
-		return nil, errors.New("rule not found: '" + name "'")
+		return nil, wrapIgnorable(errors.New("rule not found: '" + name + "'"))
 	}
 	return r, nil
 }
