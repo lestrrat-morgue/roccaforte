@@ -48,11 +48,12 @@ func TestOutgoing(t *testing.T) {
 		eventName := "test.notify" + strconv.Itoa(i)
 		go func() {
 			cl := client.NewHTTP("http://localhost:8080/enqueue")
+			events := make([]event.Event, 100)
 			for j := 0; j < 100; j++ {
-				e := event.NewCoreAttrs(eventName)
-				if !assert.NoError(t, cl.Enqueue(e), "enqueue should succeed") {
-					return
-				}
+				events[j] = event.NewCoreAttrs(eventName)
+			}
+			if !assert.NoError(t, cl.Enqueue(events...), "enqueue should succeed") {
+				return
 			}
 		}()
 	}
