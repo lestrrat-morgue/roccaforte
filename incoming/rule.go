@@ -9,12 +9,12 @@ func (m *RuleMap) Get(name string) (*Rule, error) {
 	defer m.mutex.Unlock()
 
 	if m.rules == nil {
-		return nil, errors.New("rule not found")
+		return nil, errors.New("rule not found: '" + name "'")
 	}
 
 	r, ok := m.rules[name]
 	if !ok {
-		return nil, errors.New("rule not found")
+		return nil, errors.New("rule not found: '" + name "'")
 	}
 	return r, nil
 }
