@@ -59,6 +59,9 @@ func TestOutgoing(t *testing.T) {
 	o := outgoing.New(projectID)
 	go o.Run(ctx)
 
-	time.AfterFunc(10*time.Second, cancel)
+	time.AfterFunc(10*time.Second, func() {
+		t.Logf("Killing server via cancel")
+		cancel()
+	})
 	<-ctx.Done()
 }
