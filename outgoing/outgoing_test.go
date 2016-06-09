@@ -11,6 +11,7 @@ import (
 	"github.com/lestrrat/roccaforte/incoming"
 	"github.com/lestrrat/roccaforte/outgoing"
 	"github.com/stretchr/testify/assert"
+	"github.com/WatchBeam/clock"
 	"golang.org/x/net/context"
 )
 
