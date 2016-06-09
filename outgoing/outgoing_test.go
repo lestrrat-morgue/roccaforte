@@ -35,7 +35,10 @@ func TestOutgoing(t *testing.T) {
 	e.Storage = s
 	e.AddSource(h)
 
-	go e.Run(ctx)
+	go func() {
+		assert.NoError(t, e.Run(ctx), "incoming engine should exit w/o errors")
+	}()
+
 	go h.Loop(ctx)
 	for i := 0; i < 10; i++ {
 		e.SetRule("test.notify" + strconv.Itoa(i), &incoming.Rule{})
