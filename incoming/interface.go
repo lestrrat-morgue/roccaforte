@@ -24,13 +24,12 @@ type Server struct {
 }
 
 type EventStorage interface {
-	Save(context.Context, ...event.Event) error
-	AddEventDelivery(int64, []ReceivedEvent) error
+	Save(context.Context, int64, ...*ReceivedEvent) error
 }
 
 type EventSource interface {
 	SetStorage(EventStorage)
-	Events() <-chan event.Event
+	Events() <-chan []*ReceivedEvent
 }
 
 type ReceivedEvent struct {
@@ -47,14 +46,14 @@ type ReceivedEvent struct {
 
 type GPubSubSource struct {
 	client  *pubsub.Client
-	outCh   chan []ReceivedEvent
+	outCh   chan []*ReceivedEvent
 	storage EventStorage
 	Topic   string // PubSub topic name
 }
 
 type HTTPSource struct {
 	http.Handler
-	outCh   chan []ReceivedEvent
+	outCh   chan []*ReceivedEvent
 	storage EventStorage
 	Listen  string
 }
@@ -73,7 +72,7 @@ type Destination interface {
 
 type MemoryStorage struct {
 	mutex sync.Mutex
-	store map[int64]map[string][]event.Event
+	store map[int64]map[string][]*ReceivedEvent
 }
 
 type GDatastoreStorage struct {

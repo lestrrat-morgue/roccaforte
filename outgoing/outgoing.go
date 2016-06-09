@@ -12,6 +12,12 @@ import (
 	"google.golang.org/cloud/datastore"
 )
 
+func New(id string) *Server {
+	return &Server{
+		ProjectID: id,
+	}
+}
+
 func (s *Server) Run(ctx context.Context) error {
 	var cancel func()
 	ctx, cancel = context.WithCancel(ctx)

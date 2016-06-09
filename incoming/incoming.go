@@ -70,7 +70,7 @@ func (e *Server) Run(ctx context.Context) error {
 				return errors.New("received value was not a event.Event type (" + rv.Type().String() + ")")
 			}
 
-			if err := e.handleIncomingEvents(rv.Interface().([]ReceivedEvent)); err != nil {
+			if err := e.handleIncomingEvents(ctx, rv.Interface().([]*ReceivedEvent)); err != nil {
 				if !tools.IsIgnorable(err) {
 					return errors.Wrap(err, "failed to handle received value")
 				}
@@ -81,9 +81,9 @@ func (e *Server) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) handleIncomingEvents(events []ReceivedEvent) error {
+func (s *Server) handleIncomingEvents(ctx context.Context, events []*ReceivedEvent) error {
 	// Group by event names first, to make the processing faster
-	byname := make(map[string][]ReceivedEvent)
+	byname := make(map[string][]*ReceivedEvent)
 	for _, e := range events {
 		byname[e.Name()] = append(byname[e.Name()], e)
 	}
@@ -106,11 +106,11 @@ func (s *Server) handleIncomingEvents(events []ReceivedEvent) error {
 			// These events are all guaranteed to have the same received on date.
 			t = list[0].ReceivedOn().Unix()
 			if mod := t % rule.AggregationWindow(); mod > 0 {
-				t = t - mod
+				t = t - mod + rule.AggregationWindow()
 			}
 		}
 
-		if err := s.Storage.AddEventDelivery(t, events); err != nil {
+		if err := s.Storage.Save(ctx, t, events...); err != nil {
 			return errors.Wrap(err, "failed to add event for delivery")
 		}
 	}

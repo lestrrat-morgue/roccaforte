@@ -77,7 +77,7 @@ func TestHTTPSource(t *testing.T) {
 
 	// All events should be in the same time frame
 	var timeframe int64 = 0
-	m.Walk(func(p int64, s string, events []event.Event) {
+	m.Walk(func(p int64, s string, events []*incoming.ReceivedEvent) {
 		switch timeframe {
 		case 0:
 			timeframe = p

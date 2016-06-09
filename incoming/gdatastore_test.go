@@ -25,7 +25,7 @@ func TestGDatastore(t *testing.T) {
 	s := incoming.NewGDatastoreStorage(projectID)
 	e := incoming.NewEvent(nil, "test.notify")
 	e.SetReceivedOn(time.Now())
-	if !assert.NoError(t, s.Save(ctx, e), "s.Save should succeed") {
+	if !assert.NoError(t, s.Save(ctx, 0, e), "s.Save should succeed") {
 		return
 	}
 	if !assert.NoError(t, s.Delete(ctx, e), "s.Delete should succeed") {

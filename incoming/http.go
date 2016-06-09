@@ -14,7 +14,7 @@ import (
 func NewHTTPSource() *HTTPSource {
 	mux := http.NewServeMux()
 	s := &HTTPSource{
-		outCh:   make(chan []ReceivedEvent),
+		outCh:   make(chan []*ReceivedEvent),
 		Listen:  ":8080",
 		Handler: mux,
 	}
@@ -53,7 +53,7 @@ func (s *HTTPSource) Loop(ctx context.Context) {
 	<-exited
 }
 
-func (s *HTTPSource) Events() <-chan []ReceivedEvent {
+func (s *HTTPSource) Events() <-chan []*ReceivedEvent {
 	return s.outCh
 }
 
@@ -89,9 +89,9 @@ func (s *HTTPSource) httpEnqueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]ReceivedEvent, error) {
+func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]*ReceivedEvent, error) {
 	now := time.Now()
-	events := []ReceivedEvent{}
+	events := []*ReceivedEvent{}
 	if err := json.NewDecoder(r.Body).Decode(&events); err != nil {
 		return nil, errors.Wrap(err, "failed to decode JSON")
 	}
@@ -99,7 +99,6 @@ func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]ReceivedEv
 	// Save data (XXX This is too naive)
 	for _, e := range events {
 		e.SetReceivedOn(now)
-		s.storage.Save(ctx, e)
 	}
 
 	return events, nil

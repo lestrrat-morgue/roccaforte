@@ -20,42 +20,50 @@ func (s *GDatastoreStorage) client(ctx context.Context) (*datastore.Client, erro
 	return datastore.NewClient(ctx, s.ProjectID)
 }
 
-func (s *GDatastoreStorage) Save(ctx context.Context, events ...*ReceivedEvent) error {
+func (s *GDatastoreStorage) Save(ctx context.Context, fireT int64, events ...*ReceivedEvent) error {
 	cl, err := s.client(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create datastore client")
 	}
 
-	// classify entries into basetime / event name
+	// get distinct event names
+	eventNames := make(map[string]struct{})
 	for _, e := range events {
-		id := e.ReceivedOn().Unix()
-		if mod := id % 300; mod > 0 {
-			id = id - mod
+		if _, ok := eventNames[e.Name()]; ok {
+			continue
 		}
+		eventNames[e.Name()] = struct{}{}
+	}
 
-		parent := datastore.NewKey(ctx, "ReceivedEvents", strconv.FormatInt(id, 10), 0, nil)
-		key := datastore.NewIncompleteKey(ctx, e.Name(), parent)
-		_, err := cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
-			k := datastore.NewKey(ctx, "EventGroup", strconv.FormatInt(id, 10), 0, nil)
+
+	parent := datastore.NewKey(ctx, "ReceivedEvents", strconv.FormatInt(fireT, 10), 0, nil)
+	keys := make([]*datastore.Key, len(events))
+	// classify entries into basetime / event name
+	for i, e := range events {
+		keys[i] = datastore.NewIncompleteKey(ctx, e.Name(), parent)
+	}
+
+	if _, err = cl.PutMulti(ctx, keys, events); err != nil {
+		return errors.Wrap(err, "failed to execute PutMulti")
+	}
+
+	// Create EventGroup for fire time `fireT`
+	// Create these at the end, because without these, there will be no events fired
+	_, err = cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
+		for name := range eventNames {
+			k := datastore.NewKey(ctx, "EventGroup", strconv.FormatInt(fireT, 10), 0, nil)
 			var g event.EventGroup
 			if err := tx.Get(k, &g); err == nil {
-				return nil
+				continue
 			}
-			g.ID = id
-			g.Kind = e.Name()
-			_, err = tx.Put(k, &g)
-			return err
-		})
-
-		if err != nil {
-			return errors.Wrap(err, "failed to store event id")
+			g.ID = fireT
+			g.Kind = name
+			tx.Put(k, &g)
 		}
+		return nil
+	})
 
-		if _, err = cl.Put(ctx, key, e); err != nil {
-			return errors.Wrap(err, "failed to Put event to datastore")
-		}
-	}
-	return nil
+	return errors.Wrap(err, "failed to create event group")
 }
 
 func (s *GDatastoreStorage) Delete(ctx context.Context, events ...*ReceivedEvent) error {
