@@ -6,16 +6,19 @@ import (
 	"reflect"
 	"syscall"
 
-	"github.com/lestrrat/roccaforte/event"
 	"github.com/lestrrat/roccaforte/internal/tools"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
 
-var eventType = reflect.TypeOf((*event.Event)(nil)).Elem()
+var eventType = reflect.TypeOf([]*ReceivedEvent{})
 
 func New() *Server {
 	return &Server{}
+}
+
+func (e *Server) SetRule(evname string, r *Rule) {
+	e.Rules.Set(evname, r)
 }
 
 func (e *Server) AddSource(s EventSource) {
@@ -59,6 +62,7 @@ func (e *Server) Run(ctx context.Context) error {
 		chosen, rv, ok := reflect.Select(cases)
 		switch chosen {
 		case 0:
+			println("bail out")
 			loop = false
 			continue // ctx.Done
 		default:
@@ -90,7 +94,7 @@ func (s *Server) handleIncomingEvents(ctx context.Context, events []*ReceivedEve
 
 	var t int64
 	for name, list := range byname {
-		rule, err := s.LookupRule(name)
+		rule, err := s.Rules.Get(name)
 		if err != nil {
 			if !tools.IsIgnorable(err) {
 				return errors.Wrap(err, "failed to lookup rule")
@@ -115,8 +119,4 @@ func (s *Server) handleIncomingEvents(ctx context.Context, events []*ReceivedEve
 		}
 	}
 	return nil
-}
-
-func (s *Server) LookupRule(name string) (*Rule, error) {
-	return nil, nil
 }

@@ -13,12 +13,17 @@ import (
 )
 
 type Rule struct {}
+type RuleMap struct {
+	mutex sync.Mutex
+	rules map[string]*Rule
+}
 
 type Destination interface {
 	Notify(event.Event) error
 }
 
 type Server struct {
+	Rules   RuleMap
 	Sources []EventSource
 	Storage EventStorage
 }

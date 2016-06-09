@@ -37,6 +37,9 @@ func TestOutgoing(t *testing.T) {
 
 	go e.Run(ctx)
 	go h.Loop(ctx)
+	for i := 0; i < 10; i++ {
+		e.SetRule("test.notify" + strconv.Itoa(i), &incoming.Rule{})
+	}
 
 	for i := 0; i < 10; i++ {
 		go func() {
