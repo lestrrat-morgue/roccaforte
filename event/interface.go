@@ -11,8 +11,7 @@ type CoreAttrs struct {
 }
 
 type EventGroup struct {
-	ID int64
-	Kind string // value passed to datastore.NewQuery(kind)
+	ID          int64
+	Kind        string // value passed to datastore.NewQuery(kind)
+	ProcessedOn int64  // non-zero if being processed by somebody
 }
-
-
