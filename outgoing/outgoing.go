@@ -49,46 +49,48 @@ func (s *Server) Run(ctx context.Context) error {
 	tick := time.NewTicker(time.Minute)
 	defer tick.Stop()
 
-	// Look for event groups that are past the due date
-	select {
-	case <-ctx.Done():
-		return nil
-	case <-tick.C:
-		var groups []event.EventGroup
-		var keys []*datastore.Key
-
-		// Lookup groups and mark them as taken
-		_, err := cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
-			now := s.Clock.Now().Unix()
-
-			var g event.EventGroup
-			q := datastore.NewQuery("EventGroup").
-				Filter("ID <=", now).
-				Filter("ProcessedOn =", 0).
-				Order("ID")
-
-			for it := cl.Run(ctx, q); ; {
-				key, err := it.Next(&g)
-				if err != nil {
-					break
-				}
-
-				g.ProcessedOn = now
-				if _, err := tx.Put(key, &g); err != nil {
-					return errors.Wrap(err, "failed to update event group")
-				}
-				groups = append(groups, g)
-				keys   = append(keys, key)
-			}
+	for {
+		select {
+		case <-ctx.Done():
 			return nil
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to fetch process group")
-		}
+		case <-tick.C:
+			// Look for event groups that are past the due date
+			var groups []event.EventGroup
+			var keys []*datastore.Key
 
-		for i, g := range groups {
-			// go process this ID
-			go s.ProcessEventGroup(ctx, keys[i], g)
+			// Lookup groups and mark them as taken
+			_, err := cl.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
+				now := s.Clock.Now().Unix()
+
+				var g event.EventGroup
+				q := datastore.NewQuery("EventGroup").
+					Filter("ID <=", now).
+					Filter("ProcessedOn =", 0).
+					Order("ID")
+
+				for it := cl.Run(ctx, q); ; {
+					key, err := it.Next(&g)
+					if err != nil {
+						break
+					}
+
+					g.ProcessedOn = now
+					if _, err := tx.Put(key, &g); err != nil {
+						return errors.Wrap(err, "failed to update event group")
+					}
+					groups = append(groups, g)
+					keys = append(keys, key)
+				}
+				return nil
+			})
+			if err != nil {
+				return errors.Wrap(err, "failed to fetch process group")
+			}
+
+			for i, g := range groups {
+				// go process this ID
+				go s.ProcessEventGroup(ctx, keys[i], g)
+			}
 		}
 	}
 	return nil
@@ -124,7 +126,7 @@ func (s *Server) ProcessEventGroup(ctx context.Context, key *datastore.Key, g ev
 
 	m := struct {
 		ID         int64 `json:"id"`
-		EventCount int    `json:"event_count"`
+		EventCount int   `json:"event_count"`
 	}{
 		ID:         key.ID(),
 		EventCount: c,
