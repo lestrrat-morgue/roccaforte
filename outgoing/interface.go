@@ -1,10 +1,13 @@
 package outgoing
 
 import (
+	"time"
+
 	"github.com/WatchBeam/clock"
 )
 
 type Server struct {
-	Clock     clock.Clock
-	ProjectID string
+	CheckInterval time.Duration
+	Clock         clock.Clock
+	ProjectID     string
 }

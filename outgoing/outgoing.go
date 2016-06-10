@@ -16,8 +16,9 @@ import (
 
 func New(id string) *Server {
 	return &Server{
-		Clock:     clock.C,
-		ProjectID: id,
+		CheckInterval: time.Minute,
+		Clock:         clock.C,
+		ProjectID:     id,
 	}
 }
 
@@ -46,14 +47,14 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 	defer cl.Close()
 
-	tick := time.NewTicker(time.Minute)
+	tick := s.Clock.NewTicker(s.CheckInterval)
 	defer tick.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-tick.C:
+		case <-tick.Chan():
 			// Look for event groups that are past the due date
 			var groups []event.EventGroup
 			var keys []*datastore.Key
