@@ -101,7 +101,7 @@ func (s *HTTPSource) toEvent(ctx context.Context, r *http.Request) ([]*ReceivedE
 	// prune possible nils
 	events := make([]*ReceivedEvent, 0, len(in))
 	// Save data (XXX This is too naive)
-	for _, e := range events {
+	for _, e := range in {
 		if e == nil {
 			continue
 		}
